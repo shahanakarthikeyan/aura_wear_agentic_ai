@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA WEAR — Cardiac Prediction System</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #030712;
+    --surface:   #0d1117;
+    --card:      #111827;
+    --border:    #1f2937;
+    --safe:      #10b981;
+    --low:       #3b82f6;
+    --moderate:  #f59e0b;
+    --high:      #f97316;
+    --critical:  #ef4444;
+    --text:      #f9fafb;
+    --muted:     #6b7280;
+    --accent:    #06b6d4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated grid background ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(6,182,212,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(6,182,212,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .heart-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    animation: heartbeat 1.2s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(239,68,68,0.4);
+  }
+
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    14%       { transform: scale(1.15); }
+    28%       { transform: scale(1); }
+    42%       { transform: scale(1.1); }
+    56%       { transform: scale(1); }
+  }
+
+  .logo-text h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, #06b6d4, #ffffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo-text p {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.3);
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--safe);
+    letter-spacing: 1px;
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--safe);
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .clock {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ── ALERT BANNER ── */
+  #alert-banner {
+    border-radius: 14px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.5s ease;
+    border: 1px solid;
+  }
+
+  .alert-icon { font-size: 28px; }
+
+  .alert-content h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  .alert-content p {
+    font-size: 13px;
+    opacity: 0.8;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .alert-right {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .alert-right .time {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .alert-right .label {
+    font-size: 11px;
+    opacity: 0.6;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1px;
+  }
+
+  /* Alert level colors */
+  .level-COLLECTING { background: rgba(107,114,128,0.1); border-color: rgba(107,114,128,0.3); color: #9ca3af; }
+  .level-SAFE       { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3);  color: var(--safe); }
+  .level-LOW        { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.3);  color: var(--low); }
+  .level-MODERATE   { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3);  color: var(--moderate); }
+  .level-HIGH       { background: rgba(249,115,22,0.08); border-color: rgba(249,115,22,0.3);  color: var(--high); }
+  .level-CRITICAL   { background: rgba(239,68,68,0.08);  border-color: rgba(239,68,68,0.5);   color: var(--critical); animation: flash 1s ease-in-out infinite; }
+
+  @keyframes flash {
+    0%, 100% { border-color: rgba(239,68,68,0.5); }
+    50%       { border-color: rgba(239,68,68,1); box-shadow: 0 0 30px rgba(239,68,68,0.3); }
+  }
+
+  /* ── COLLECTION PROGRESS ── */
+  .progress-bar-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .progress-track {
+    background: var(--border);
+    border-radius: 100px;
+    height: 8px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, #06b6d4, #3b82f6);
+    transition: width 0.8s ease;
+    box-shadow: 0 0 10px rgba(6,182,212,0.5);
+  }
+
+  /* ── MAIN GRID ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) 1.2fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ── VITAL CARDS ── */
+  .vital-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+  }
+
+  .vital-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-color, var(--accent));
+    opacity: 0.6;
+  }
+
+  .vital-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .vital-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .vital-icon { font-size: 18px; }
+
+  .vital-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+    transition: color 0.3s ease;
+  }
+
+  .vital-unit {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .vital-bar {
+    margin-top: 14px;
+    background: var(--border);
+    border-radius: 100px;
+    height: 4px;
+    overflow: hidden;
+  }
+
+  .vital-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.8s ease;
+  }
+
+  /* ── RISK SCORE CARD ── */
+  .risk-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    grid-row: span 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .risk-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .risk-circle {
+    position: relative;
+    width: 160px;
+    height: 160px;
+  }
+
+  .risk-circle svg {
+    transform: rotate(-90deg);
+    width: 100%; height: 100%;
+  }
+
+  .risk-circle .track {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 10;
+  }
+
+  .risk-circle .fill {
+    fill: none;
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 440;
+    stroke-dashoffset: 440;
+    transition: stroke-dashoffset 1s ease, stroke 0.5s ease;
+  }
+
+  .risk-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .risk-number {
+    font-family: 'Orbitron', monospace;
+    font-size: 36px;
+    font-weight: 900;
+    transition: color 0.5s ease;
+  }
+
+  .risk-pct { font-size: 14px; color: var(--muted); }
+
+  .risk-level-badge {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    padding: 8px 20px;
+    border-radius: 100px;
+    border: 1px solid;
+    transition: all 0.5s ease;
+  }
+
+  .risk-meta {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .risk-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--surface);
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .risk-meta-row .key {
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .risk-meta-row .val {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* ── BOTTOM GRID ── */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.2fr;
+    gap: 16px;
+  }
+
+  /* ── WAVEFORM CARD ── */
+  .wave-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 14px;
+  }
+
+  canvas { width: 100%; border-radius: 8px; }
+
+  /* ── INDICATORS ── */
+  .indicators-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .indicator-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .indicator-item:last-child { border-bottom: none; }
+  .indicator-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── NOTIFICATIONS ── */
+  .notifications-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .notification {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    animation: slideIn 0.3s ease;
+  }
+
+  .notification:last-child { border-bottom: none; }
+
+  .notif-icon { font-size: 16px; flex-shrink: 0; }
+
+  .notif-text { color: var(--muted); font-family: 'DM Mono', monospace; line-height: 1.5; }
+  .notif-text strong { color: var(--text); }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 2px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="heart-icon">🫀</div>
+      <div class="logo-text">
+        <h1>AURA WEAR</h1>
+        <p>Cardiac Prediction System · Multi-Agent AI</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        LIVE MONITORING
+      </div>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- ALERT BANNER -->
+  <div id="alert-banner" class="level-COLLECTING">
+    <div class="alert-icon" id="alert-icon">📡</div>
+    <div class="alert-content">
+      <h2 id="alert-title">COLLECTING DATA</h2>
+      <p id="alert-msg">Accumulating 3-4 hours of sensor data before forecast begins...</p>
+    </div>
+    <div class="alert-right">
+      <div class="time" id="alert-time">--</div>
+      <div class="label">PREDICTED EVENT</div>
+    </div>
+  </div>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-bar-wrap">
+    <div class="progress-label">
+      <span>DATA COLLECTION WINDOW</span>
+      <span id="progress-label">0 / 16 readings (0h 0m of 4h 0m)</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- Heart Rate -->
+    <div class="vital-card" style="--accent-color: #ef4444;">
+      <div class="vital-header">
+        <span class="vital-label">Heart Rate</span>
+        <span class="vital-icon">❤️</span>
+      </div>
+      <div class="vital-value" id="hr-val" style="color:#ef4444">--</div>
+      <div class="vital-unit">BPM</div>
+      <div class="vital-bar"><div class="vital-bar-fill" id="hr-bar" style="width:0%;background:#ef4444;"></div></div>
+    </div>
+
+    <!-- SpO2 -->
+    <div class="vital-card" style="--accent-color: #06b6d4;">
+      <div class="vital-header">
+        <span class="vital-label">SpO₂</span>
+        <span class="vital-icon">🫁</span>
+      </div>
+      <div class="vital-value" id="spo2-val" style="color:#06b6d4">--</div>
+      <div class="vital-unit">% OXYGEN</div>
+      <div class="vital-bar"><div class="vital-bar-fill" id="spo2-bar" style="width:0%;background:#06b6d4;"></div></div>
+    </div>
+
+    <!-- HRV -->
+    <div class="vital-card" style="--accent-color: #8b5cf6;">
+      <div class="vital-header">
+        <span class="vital-label">HRV</span>
+        <span class="vital-icon">📊</span>
+      </div>
+      <div class="vital-value" id="hrv-val" style="color:#8b5cf6">--</div>
+      <div class="vital-unit">MS VARIABILITY</div>
+      <div class="vital-bar"><div class="vital-bar-fill" id="hrv-bar" style="width:0%;background:#8b5cf6;"></div></div>
+    </div>
+
+    <!-- Risk Score (spans 2 rows) -->
+    <div class="risk-card">
+      <div class="risk-title">20-HOUR CARDIAC RISK</div>
+      <div class="risk-circle">
+        <svg viewBox="0 0 160 160">
+          <circle class="track" cx="80" cy="80" r="70"/>
+          <circle class="fill" id="risk-arc" cx="80" cy="80" r="70" stroke="#10b981"/>
+        </svg>
+        <div class="risk-center">
+          <div class="risk-number" id="risk-num" style="color:#10b981">0</div>
+          <div class="risk-pct">%</div>
+        </div>
+      </div>
+      <div class="risk-level-badge" id="risk-badge" style="border-color:#10b981;color:#10b981">SAFE</div>
+      <div class="risk-meta">
+        <div class="risk-meta-row">
+          <span class="key">Predicted Event</span>
+          <span class="val" id="pred-hours">--</span>
+        </div>
+        <div class="risk-meta-row">
+          <span class="key">Confidence</span>
+          <span class="val" id="confidence">--%</span>
+        </div>
+        <div class="risk-meta-row">
+          <span class="key">Sim Time</span>
+          <span class="val" id="sim-time">0h 0m</span>
+        </div>
+        <div class="risk-meta-row">
+          <span class="key">Cycle</span>
+          <span class="val" id="cycle-num">#0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blood Pressure -->
+    <div class="vital-card" style="--accent-color: #f59e0b;">
+      <div class="vital-header">
+        <span class="vital-label">Blood Pressure</span>
+        <span class="vital-icon">🩸</span>
+      </div>
+      <div class="vital-value" id="bp-val" style="color:#f59e0b">--</div>
+      <div class="vital-unit">SYSTOLIC mmHg</div>
+      <div class="vital-bar"><div class="vital-bar-fill" id="bp-bar" style="width:0%;background:#f59e0b;"></div></div>
+    </div>
+
+    <!-- Stress -->
+    <div class="vital-card" style="--accent-color: #f97316;">
+      <div class="vital-header">
+        <span class="vital-label">Stress Index</span>
+        <span class="vital-icon">⚡</span>
+      </div>
+      <div class="vital-value" id="stress-val" style="color:#f97316">--</div>
+      <div class="vital-unit">% STRESS LEVEL</div>
+      <div class="vital-bar"><div class="vital-bar-fill" id="stress-bar" style="width:0%;background:#f97316;"></div></div>
+    </div>
+
+    <!-- Body Temp -->
+    <div class="vital-card" style="--accent-color: #10b981;">
+      <div class="vital-header">
+        <span class="vital-label">Body Temp</span>
+        <span class="vital-icon">🌡️</span>
+      </div>
+      <div class="vital-value" id="temp-val" style="color:#10b981">--</div>
+      <div class="vital-unit">°C</div>
+      <div class="vital-bar"><div class="vital-bar-fill" id="temp-bar" style="width:0%;background:#10b981;"></div></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="bottom-grid">
+
+    <!-- Heart Rate Waveform -->
+    <div class="wave-card">
+      <div class="card-title">Heart Rate History</div>
+      <canvas id="hrChart" height="100"></canvas>
+    </div>
+
+    <!-- Key Indicators -->
+    <div class="indicators-card">
+      <div class="card-title">Risk Indicators</div>
+      <div id="indicators-list">
+        <div class="indicator-item">
+          <div class="indicator-dot" style="background:#6b7280"></div>
+          Waiting for prediction window...
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="notifications-card">
+      <div class="card-title">Alert Log</div>
+      <div id="notifications-list"></div>
+    </div>
+
+  </div>
+
+  <footer>AURA WEAR v1.0 · 3-4 Hour Window · 20-Hour Forecast · Multi-Agent AI System</footer>
+
+</div>
+
+<script>
+// ── Clock ─────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-US', { hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Heart Rate Chart ──────────────────────────────────────
+const canvas  = document.getElementById('hrChart');
+const ctx     = canvas.getContext('2d');
+canvas.width  = canvas.offsetWidth * 2;
+canvas.height = 200;
+const hrHistory = [];
+
+function drawChart() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (hrHistory.length < 2) return;
+
+  const w = canvas.width, h = canvas.height;
+  const min = 50, max = 180;
+  const pts = hrHistory.slice(-30);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(31,41,55,0.8)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = (h / 4) * i;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(239,68,68,0.3)');
+  grad.addColorStop(1, 'rgba(239,68,68,0)');
+
+  ctx.beginPath();
+  pts.forEach((v, i) => {
+    const x = (i / (pts.length - 1)) * w;
+    const y = h - ((v - min) / (max - min)) * h;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3;
+  ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 8;
+  pts.forEach((v, i) => {
+    const x = (i / (pts.length - 1)) * w;
+    const y = h - ((v - min) / (max - min)) * h;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+// ── Risk score color ──────────────────────────────────────
+function riskColor(level) {
+  const map = { COLLECTING:'#6b7280', SAFE:'#10b981', LOW:'#3b82f6',
+                MODERATE:'#f59e0b', HIGH:'#f97316', CRITICAL:'#ef4444' };
+  return map[level] || '#6b7280';
+}
+
+// ── Alert config ──────────────────────────────────────────
+const alertConfig = {
+  COLLECTING: { icon:'📡', title:'COLLECTING DATA',      msg:'Accumulating 3-4 hours of sensor data before forecast begins...' },
+  SAFE:       { icon:'✅', title:'ALL VITALS NORMAL',    msg:'No cardiac risk detected. Continue normal activity.' },
+  LOW:        { icon:'💙', title:'LOW RISK DETECTED',    msg:'Mild cardiac stress detected. Consider resting and hydrating.' },
+  MODERATE:   { icon:'⚠️', title:'MODERATE RISK — 8-20HR WARNING', msg:'Elevated cardiac stress. Doctor check-in recommended.' },
+  HIGH:       { icon:'🔴', title:'HIGH RISK — 4-8HR WARNING',      msg:'High cardiac risk. Caregiver and hospital have been notified.' },
+  CRITICAL:   { icon:'🚨', title:'CRITICAL — EMERGENCY ALERT',     msg:'Imminent heart attack risk! Ambulance dispatched. ER on standby.' },
+};
+
+// ── Notifications ─────────────────────────────────────────
+let lastLevel = '';
+function addNotification(level, hours, conf) {
+  const cfg = alertConfig[level];
+  const list = document.getElementById('notifications-list');
+  const color = riskColor(level);
+  const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+
+  const div = document.createElement('div');
+  div.className = 'notification';
+  div.innerHTML = `
+    <span class="notif-icon">${cfg.icon}</span>
+    <div class="notif-text">
+      <strong style="color:${color}">[${level}]</strong> ${cfg.msg.substring(0, 60)}...
+      <br><span style="color:#374151">${time} · ${hours || 'N/A'} · ${conf}% confidence</span>
+    </div>`;
+  list.prepend(div);
+
+  // Keep max 20
+  while (list.children.length > 20) list.removeChild(list.lastChild);
+}
+
+// ── SSE Stream ────────────────────────────────────────────
+const evtSource = new EventSource('/stream');
+
+evtSource.onmessage = (e) => {
+  const d = JSON.parse(e.data);
+  const color = riskColor(d.alert_level);
+  const cfg   = alertConfig[d.alert_level] || alertConfig['COLLECTING'];
+
+  // Vitals
+  document.getElementById('hr-val').textContent    = d.heart_rate;
+  document.getElementById('spo2-val').textContent  = d.spo2;
+  document.getElementById('hrv-val').textContent   = Math.round(d.hrv);
+  document.getElementById('bp-val').textContent    = d.systolic_bp;
+  document.getElementById('stress-val').textContent= d.stress_index;
+  document.getElementById('temp-val').textContent  = d.body_temp;
+
+  // Bars
+  document.getElementById('hr-bar').style.width    = `${Math.min((d.heart_rate/200)*100,100)}%`;
+  document.getElementById('spo2-bar').style.width  = `${d.spo2}%`;
+  document.getElementById('hrv-bar').style.width   = `${Math.min((d.hrv/100)*100,100)}%`;
+  document.getElementById('bp-bar').style.width    = `${Math.min((d.systolic_bp/200)*100,100)}%`;
+  document.getElementById('stress-bar').style.width= `${d.stress_index}%`;
+  document.getElementById('temp-bar').style.width  = `${((d.body_temp-35)/5)*100}%`;
+
+  // Progress bar
+  const pct = (d.window_fill / 16) * 100;
+  document.getElementById('progress-fill').style.width = `${pct}%`;
+  document.getElementById('progress-label').textContent =
+    `${d.window_fill} / 16 readings (${d.sim_time} of 4h 0m)`;
+
+  // Risk circle
+  const arcEl   = document.getElementById('risk-arc');
+  const offset  = 440 - (d.risk_score / 100) * 440;
+  arcEl.style.strokeDashoffset = offset;
+  arcEl.style.stroke = color;
+  document.getElementById('risk-num').textContent  = d.risk_score;
+  document.getElementById('risk-num').style.color  = color;
+
+  // Risk badge
+  const badge = document.getElementById('risk-badge');
+  badge.textContent   = d.alert_level;
+  badge.style.color   = color;
+  badge.style.borderColor = color;
+
+  // Meta
+  document.getElementById('pred-hours').textContent = d.is_ready ? d.predicted_hours : 'Collecting...';
+  document.getElementById('confidence').textContent  = d.is_ready ? `${d.confidence}%` : '--%';
+  document.getElementById('sim-time').textContent    = d.sim_time;
+  document.getElementById('cycle-num').textContent   = `#${d.cycle}`;
+
+  // Alert banner
+  const banner = document.getElementById('alert-banner');
+  banner.className = `level-${d.alert_level}`;
+  document.getElementById('alert-icon').textContent  = cfg.icon;
+  document.getElementById('alert-title').textContent = cfg.title;
+  document.getElementById('alert-msg').textContent   = cfg.msg;
+  document.getElementById('alert-time').textContent  = d.is_ready ? d.predicted_hours : '--';
+
+  // Indicators
+  if (d.is_ready && d.indicators) {
+    const list = document.getElementById('indicators-list');
+    list.innerHTML = d.indicators.map(ind => `
+      <div class="indicator-item">
+        <div class="indicator-dot" style="background:${color}"></div>
+        ${ind}
+      </div>`).join('');
+  }
+
+  // Notification on level change
+  if (d.alert_level !== lastLevel) {
+    addNotification(d.alert_level, d.predicted_hours, d.confidence);
+    lastLevel = d.alert_level;
+  }
+
+  // Chart
+  hrHistory.push(d.heart_rate);
+  drawChart();
+};
+
+evtSource.onerror = () => {
+  document.getElementById('alert-title').textContent = 'CONNECTION LOST';
+};
+</script>
+</body>
+</html>
